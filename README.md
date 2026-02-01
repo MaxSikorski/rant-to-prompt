@@ -22,7 +22,7 @@ This is a **FOSS(H)** project designed to run locally on a MacMini, a dedicated 
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [https://github.com/your-username/rant-to-prompt.git](https://github.com/your-username/rant-to-prompt.git)
+    git clone [https://github.com/MaxSikorski/rant-to-prompt.git](https://github.com/MaxSikorski/rant-to-prompt.git)
     cd rant-to-prompt
     ```
 
