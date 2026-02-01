@@ -2,118 +2,232 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sikorski Logic | Rant-to-Prompt v2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sikorski Logic | Perfect Parallel</title>
     <style>
-        :root { --bg: #0b0f1a; --card: #161b22; --accent: #00d4ff; --text: #e6edf3; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); color: var(--text); padding: 2rem; max-width: 900px; margin: auto; }
-        .dashboard { background: var(--card); border: 1px solid #30363d; border-radius: 12px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        h1 { color: var(--accent); margin-top: 0; font-weight: 300; letter-spacing: 1px; }
-        textarea { width: 100%; height: 180px; background: #0d1117; color: #c9d1d9; border: 1px solid #30363d; border-radius: 8px; padding: 15px; font-size: 1rem; margin-bottom: 1.5rem; resize: vertical; box-sizing: border-box; }
-        .controls { display: flex; gap: 15px; margin-bottom: 1.5rem; }
-        button { padding: 12px 24px; border-radius: 6px; border: none; cursor: pointer; font-weight: bold; transition: all 0.2s; }
-        .btn-start { background: var(--accent); color: #0b0f1a; }
-        .btn-start.recording { background: #ff4d4d; animation: pulse 1.5s infinite; }
-        .btn-copy { background: #238636; color: white; }
-        .btn-copy:hover { background: #2ea043; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .status-bar { font-size: 0.85rem; color: #8b949e; margin-bottom: 1rem; display: flex; justify-content: space-between; }
+        :root {
+            --bg: #ffffff; --text: #1d1d1f; --secondary: #86868b;
+            --border: #d2d2d7; --accent: #0071e3; --card: #f5f5f7;
+            --textarea-bg: #ffffff;
+        }
+        [data-theme='dark'] {
+            --bg: #000000; --text: #f5f5f7; --secondary: #a1a1a6;
+            --border: #333336; --accent: #2997ff; --card: #1c1c1e;
+            --textarea-bg: #121212;
+        }
+
+        * { box-sizing: border-box; -webkit-font-smoothing: antialiased; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro", sans-serif;
+            background-color: var(--bg); color: var(--text);
+            margin: 0; padding: 0; display: flex; flex-direction: column;
+            height: 100vh; overflow: hidden;
+            transition: background 0.4s ease;
+        }
+
+        header {
+            padding: 18px 40px;
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 0.5px solid var(--border);
+            background: var(--bg); z-index: 100;
+        }
+
+        .logo { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.03em; }
+
+        .container {
+            display: flex; flex: 1; width: 100%; overflow: hidden;
+        }
+
+        .panel {
+            flex: 1; display: flex; flex-direction: column;
+            padding: 40px; height: 100%; position: relative;
+        }
+
+        .left-panel { border-right: 0.5px solid var(--border); }
+
+        .label-row { 
+            display: flex; justify-content: space-between; align-items: center; 
+            height: 20px; margin-bottom: 40px; /* Large fixed margin to clear badges */
+            flex-shrink: 0;
+        }
+        
+        .label { 
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase; 
+            color: var(--secondary); letter-spacing: 0.05em; 
+        }
+
+        /* OVERLAY POSITIONS: This prevents badges/questions from pushing the box */
+        #badge-bar {
+            position: absolute; top: 75px; left: 40px;
+            display: flex; gap: 8px; flex-wrap: wrap; z-index: 5;
+        }
+
+        /* THE CORE FIX: The Mirror Boxes */
+        .mirror-box-container {
+            flex: 1;
+            display: flex;
+            position: relative;
+            min-height: 0;
+            /* We set a hard height on the container to ensure the red-line-test passes */
+            margin-bottom: 140px; /* Space for the question area below */
+        }
+
+        textarea {
+            width: 100%; height: 100% !important; 
+            background: var(--textarea-bg); color: var(--text);
+            border: 1px solid var(--border); border-radius: 16px;
+            padding: 24px; font-size: 1.1rem; line-height: 1.6;
+            resize: none; outline: none; transition: border 0.2s;
+            font-family: inherit; display: block;
+        }
+        textarea:focus { border-color: var(--accent); }
+
+        .badge { background: var(--card); border: 0.5px solid var(--border); padding: 4px 12px; border-radius: 40px; font-size: 0.7rem; font-weight: 500; }
+
+        /* Question area is now absolutely positioned so it doesn't affect box height */
+        .q-overlay { 
+            position: absolute; bottom: 65px; left: 40px; right: 40px;
+            background: var(--card); border-radius: 14px; padding: 15px; 
+            border: 0.5px solid var(--border); height: 110px; z-index: 5;
+        }
+
+        .footer-actions { 
+            position: absolute; bottom: 20px; right: 40px; left: 40px;
+            display: flex; justify-content: space-between; align-items: center; 
+            height: 44px;
+        }
+
+        .btn-primary {
+            background: var(--text); color: var(--bg);
+            border: none; padding: 12px 28px; border-radius: 25px;
+            font-weight: 600; cursor: pointer; font-size: 0.95rem;
+        }
+
+        .btn-reset { background: none; border: none; color: var(--secondary); cursor: pointer; font-size: 0.8rem; }
+
+        @media (max-width: 900px) {
+            body { overflow: auto; height: auto; }
+            .container { flex-direction: column; }
+            .panel { height: auto; padding: 25px; border: none; min-height: 600px; }
+            .mirror-box-container { height: 350px; margin-bottom: 160px; }
+            .q-overlay { bottom: 80px; left: 25px; right: 25px; }
+            #badge-bar { top: 60px; left: 25px; }
+        }
     </style>
 </head>
 <body>
 
-<div class="dashboard">
-    <h1>🎙️ Sikorski Rant-to-Prompt</h1>
-    <div class="status-bar">
-        <span id="status">Status: System Ready</span>
-        <span id="mic-level">Signal: 0%</span>
+<header>
+    <div class="logo">SIKORSKI LOGIC</div>
+    <button id="themeToggle" style="background:none; border:none; cursor:pointer; color:var(--text);">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path id="themePath" d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+        </svg>
+    </button>
+</header>
+
+<div class="container">
+    <div class="panel left-panel">
+        <div class="label-row">
+            <span class="label">Step 1: Brainstorm</span>
+            <button id="clearBtn" class="btn-reset">Reset Session</button>
+        </div>
+        
+        <div id="badge-bar"></div>
+        
+        <div class="mirror-box-container">
+            <textarea id="rawInput" placeholder="Start your dictation..."></textarea>
+        </div>
+
+        <div id="q-area" class="q-overlay" style="display:none;">
+            <div class="label" style="color: var(--accent); margin-bottom: 5px;">Refinement Questions</div>
+            <ul id="q-list" style="margin:0; padding-left:18px; font-size:0.82rem; color:var(--secondary);"></ul>
+        </div>
     </div>
 
-    <label>Raw Engineering Rant:</label>
-    <textarea id="rawText" placeholder="Start speaking... I will capture every thought on humanoid robotics, energy storage, or ASICs."></textarea>
+    <div class="panel">
+        <div class="label-row">
+            <span class="label">Step 2: Optimized Prompt</span>
+        </div>
+        
+        <div class="mirror-box-container">
+            <textarea id="finalOutput" readonly placeholder="Waiting for intent..."></textarea>
+        </div>
 
-    <div class="controls">
-        <button class="btn-start" id="toggleBtn">Start Recording</button>
-        <button class="btn-copy" id="copyBtn">Copy Optimized Prompt</button>
+        <div class="footer-actions">
+            <div></div>
+            <button id="copyBtn" class="btn-primary">Copy Prompt</button>
+        </div>
     </div>
-
-    <label>Live Optimized Prompt (Multi-Agent Structured):</label>
-    <textarea id="finalPrompt" readonly placeholder="The structured prompt will appear here in real-time..."></textarea>
 </div>
 
 <script>
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-        alert("Your browser does not support Speech Recognition. Please use Chrome or Edge.");
+    let masterExperts = [];
+    const rawInput = document.getElementById('rawInput');
+    const finalOutput = document.getElementById('finalOutput');
+    const badgeBar = document.getElementById('badge-bar');
+    const qArea = document.getElementById('q-area');
+    const qList = document.getElementById('q-list');
+
+    async function init() {
+        try {
+            const res = await fetch('experts.json');
+            masterExperts = await res.json();
+            if (rawInput.value) update();
+        } catch (e) {}
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = 'en-US';
-
-    const rawTextArea = document.getElementById('rawText');
-    const finalPromptArea = document.getElementById('finalPrompt');
-    const toggleBtn = document.getElementById('toggleBtn');
-    const statusText = document.getElementById('status');
-
-    let isRecording = false;
-
-    // Logic to build the prompt dynamically
-    function updateOptimizedPrompt(text) {
-        if (!text.trim()) return "";
-        const header = "### TASK: RESTRUCTURE ENGINEERING RANT\n";
-        const context = "### RAW INPUT:\n" + text + "\n\n";
-        const instruction = "### INSTRUCTIONS:\n1. Extract core technical goals.\n2. Identify hardware/software dependencies (Voron/Humanoid/FOSS).\n3. Reformat as a clean, agentic instruction set for a high-level LLM.";
-        return header + context + instruction;
-    }
-
-    recognition.onstart = () => {
-        statusText.innerText = "Status: Listening / Secure Connection Active";
-        toggleBtn.classList.add('recording');
-        toggleBtn.innerText = "Stop Recording";
-    };
-
-    recognition.onerror = (event) => {
-        statusText.innerText = "Error: " + event.error;
-        if(event.error === 'not-allowed') alert("Check Chrome settings: Allow microphone access for local files or host on GitHub Pages.");
-    };
-
-    recognition.onresult = (event) => {
-        let currentTranscript = "";
-        for (let i = 0; i < event.results.length; i++) {
-            currentTranscript += event.results[i][0].transcript;
-        }
-        
-        // Update the RAW box
-        rawTextArea.value = currentTranscript;
-        
-        // Update the PREVIEW box LIVE
-        finalPromptArea.value = updateOptimizedPrompt(currentTranscript);
-    };
-
-    toggleBtn.onclick = () => {
-        if (isRecording) {
-            recognition.stop();
-            isRecording = false;
-            toggleBtn.classList.remove('recording');
-            toggleBtn.innerText = "Start Recording";
-        } else {
-            recognition.start();
-            isRecording = true;
-        }
-    };
-
-    document.getElementById('copyBtn').onclick = () => {
-        if (!finalPromptArea.value) {
-            alert("Nothing to copy yet! Start speaking first.");
+    function update() {
+        const text = rawInput.value.toLowerCase();
+        if (!text.trim()) {
+            finalOutput.value = ""; badgeBar.innerHTML = ""; qArea.style.display = "none";
             return;
         }
-        finalPromptArea.select();
-        document.execCommand('copy');
-        statusText.innerText = "Status: Prompt Copied to Clipboard!";
+
+        let roles = []; let qs = [];
+        masterExperts.forEach(ex => {
+            if (ex.kws.some(k => text.includes(k))) {
+                roles.push(ex.role); qs.push(...ex.qs);
+            }
+        });
+
+        badgeBar.innerHTML = roles.map(r => `<div class="badge">${r}</div>`).join('');
+        
+        if (qs.length > 0) {
+            qArea.style.display = "block";
+            qList.innerHTML = [...new Set(qs)].slice(0, 3).map(q => `<li>${q}</li>`).join('');
+        } else {
+            qArea.style.display = "none";
+        }
+
+        const roleStr = roles.length ? roles.join(' & ') : "Specialist";
+        finalOutput.value = `### ROLE\n${roleStr}\n\n### CONTEXT\n"${rawInput.value.trim()}"\n\n### TASK\nRefine this.`;
+    }
+
+    const THEME_KEY = 'sikorski_theme';
+    const themePath = document.getElementById('themePath');
+    function applyTheme(t) {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem(THEME_KEY, t);
+        themePath.setAttribute('d', t === 'dark' ? 
+            'M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m0-11.314l.707.707m11.314 11.314l.707.707M12 8a4 4 0 100 8 4 4 0 000-8z' : 
+            'M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z');
+    }
+
+    document.getElementById('themeToggle').onclick = () => applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+    rawInput.addEventListener('input', update);
+    document.getElementById('clearBtn').onclick = () => { rawInput.value = ""; update(); };
+    document.getElementById('copyBtn').onclick = () => {
+        finalOutput.select(); document.execCommand('copy');
+        document.getElementById('copyBtn').innerText = "Copied";
+        setTimeout(() => document.getElementById('copyBtn').innerText = "Copy Prompt", 2000);
+    };
+
+    window.onload = () => {
+        applyTheme(localStorage.getItem(THEME_KEY) || 'light');
+        init();
     };
 </script>
-
 </body>
 </html>
